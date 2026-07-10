@@ -1,0 +1,28 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Helles Farbschema; gleiche Schlüssel wie Dark.xaml. Der Akzent ist dunkler
+         als im Dark-Theme, damit er auf Weiß genug Kontrast hat. -->
+
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#F3F5F8"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#1A202C"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#0891B2"/>
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#22A7C9"/>
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#0E7490"/>
+    <SolidColorBrush x:Key="AccentTextBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="MutedBrush" Color="#5B6B7F"/>
+    <SolidColorBrush x:Key="TrackBrush" Color="#E2E8F0"/>
+    <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
+    <!-- Schwarz mit 8 % Opacity -->
+    <SolidColorBrush x:Key="CardBorderBrush" Color="#14000000"/>
+    <SolidColorBrush x:Key="SecondaryHoverBrush" Color="#EDF1F5"/>
+    <SolidColorBrush x:Key="SecondaryPressedBrush" Color="#E2E7ED"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+    <SolidColorBrush x:Key="DisabledBrush" Color="#CBD5E1"/>
+
+    <!-- Der Umschalter zeigt das Ziel-Theme: im Hellen den Mond -->
+    <sys:String x:Key="ThemeToggleGlyph">&#xE708;</sys:String>
+    <sys:String x:Key="ThemeToggleTooltip">Dunkler Modus</sys:String>
+
+</ResourceDictionary>

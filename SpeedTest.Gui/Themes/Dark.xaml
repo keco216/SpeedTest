@@ -1,0 +1,29 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Dunkles Farbschema. Die Styles liegen in Shared.xaml und verweisen per
+         DynamicResource hierher, damit der Theme-Wechsel zur Laufzeit greift. -->
+
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#0F1218"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#EDF1F7"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#22D3EE"/>
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#43DAF1"/>
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#1DB3CA"/>
+    <!-- Text auf Akzentflächen (Start-Button) -->
+    <SolidColorBrush x:Key="AccentTextBrush" Color="#0F1218"/>
+    <SolidColorBrush x:Key="MutedBrush" Color="#8A94A6"/>
+    <SolidColorBrush x:Key="TrackBrush" Color="#2A3140"/>
+    <SolidColorBrush x:Key="CardBrush" Color="#161B24"/>
+    <!-- Weiß mit 7 % Opacity (0x12 ≈ 18/255) -->
+    <SolidColorBrush x:Key="CardBorderBrush" Color="#12FFFFFF"/>
+    <SolidColorBrush x:Key="SecondaryHoverBrush" Color="#1F2633"/>
+    <SolidColorBrush x:Key="SecondaryPressedBrush" Color="#12161E"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="#F87171"/>
+    <SolidColorBrush x:Key="DisabledBrush" Color="#232A38"/>
+
+    <!-- Der Umschalter zeigt das Ziel-Theme: im Dunkeln die Sonne -->
+    <sys:String x:Key="ThemeToggleGlyph">&#xE706;</sys:String>
+    <sys:String x:Key="ThemeToggleTooltip">Heller Modus</sys:String>
+
+</ResourceDictionary>

@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SpeedTest.Cli/SpeedTest.Cli.csproj" />
+  <Project Path="SpeedTest.Core/SpeedTest.Core.csproj" />
+  <Project Path="SpeedTest.Gui/SpeedTest.Gui.csproj" />
+</Solution>

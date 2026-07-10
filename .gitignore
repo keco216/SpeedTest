@@ -1,0 +1,12 @@
+# Build-Ausgaben
+bin/
+obj/
+publish/
+*.user
+
+# IDE
+.vs/
+.idea/
+
+# Lokale Messdaten (liegen normal in %AppData%, sicherheitshalber)
+history.json

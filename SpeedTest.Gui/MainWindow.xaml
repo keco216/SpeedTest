@@ -1,0 +1,237 @@
+<Window x:Class="SpeedTest.Gui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:SpeedTest.Gui.Controls"
+        Title="Speedtest"
+        Width="420" SizeToContent="Height"
+        ResizeMode="CanMinimize"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="{StaticResource TextFontFamily}">
+
+    <Border Background="{DynamicResource BackgroundBrush}" Padding="24">
+        <StackPanel>
+            <!-- Kopfzeile: links der Theme-Umschalter (Glyphe und Tooltip kommen aus
+                 dem aktiven Theme), rechts der klickbare Standort des Messservers -->
+            <Grid MinHeight="16" Margin="0,0,0,16">
+                <Button x:Name="ThemeToggleButton"
+                        Style="{StaticResource AccentIconButtonStyle}"
+                        Content="{DynamicResource ThemeToggleGlyph}"
+                        ToolTip="{DynamicResource ThemeToggleTooltip}"
+                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                        Click="ThemeToggle_Click"/>
+
+                <TextBlock x:Name="ServerInfoText"
+                           Style="{StaticResource ServerInfoStyle}"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           Visibility="Hidden"
+                           MouseLeftButtonUp="ServerInfo_Click"/>
+
+                <!-- Win11-Flyout unter der Serverzeile; Platzierung (rechtsbündig) setzt
+                     der CustomPopupPlacementCallback im Code-Behind -->
+                <Popup x:Name="ServerPopup"
+                       PlacementTarget="{Binding ElementName=ServerInfoText}"
+                       Placement="Custom"
+                       StaysOpen="False"
+                       AllowsTransparency="True"
+                       PopupAnimation="None">
+                    <Border x:Name="ServerPopupContent"
+                            Style="{StaticResource CardStyle}"
+                            MinWidth="240">
+                        <StackPanel>
+                            <TextBlock x:Name="PopupTitleText"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock x:Name="PopupColoText"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,2,0,0"/>
+
+                            <!-- Mini-Karte (OSM-Tiles, Standort mittig); erscheint asynchron
+                                 nach dem Laden, Klick öffnet Google Maps -->
+                            <Grid x:Name="PopupMapPanel"
+                                  Width="240" Height="120"
+                                  Margin="0,10,0,0"
+                                  Cursor="Hand"
+                                  Visibility="Collapsed"
+                                  ToolTip="In Google Maps öffnen"
+                                  MouseLeftButtonUp="MapPanel_Click">
+                                <Border CornerRadius="6"
+                                        BorderBrush="{DynamicResource CardBorderBrush}"
+                                        BorderThickness="1">
+                                    <Border.Background>
+                                        <ImageBrush x:Name="PopupMapBrush" Stretch="UniformToFill"/>
+                                    </Border.Background>
+                                </Border>
+                                <Ellipse Width="12" Height="12"
+                                         Fill="{DynamicResource AccentBrush}"
+                                         Stroke="#0F1218" StrokeThickness="2"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="© OpenStreetMap"
+                                           FontSize="9"
+                                           Foreground="#99333333"
+                                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                           Margin="0,0,6,3"/>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <TextBlock x:Name="PopupIpText"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource MutedBrush}"
+                                           VerticalAlignment="Center"/>
+                                <Button x:Name="CopyIpButton"
+                                        Style="{StaticResource AccentIconButtonStyle}"
+                                        Content="&#xE8C8;"
+                                        ToolTip="IP kopieren"
+                                        Width="20" Height="20" FontSize="11"
+                                        Margin="6,0,0,0"
+                                        Click="CopyIp_Click"/>
+                            </StackPanel>
+                            <TextBlock x:Name="PopupPingText"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,6,0,0"/>
+                            <Border x:Name="PopupSeparator"
+                                    Height="1"
+                                    Background="{DynamicResource CardBorderBrush}"
+                                    Margin="0,12,0,12"/>
+                            <TextBlock x:Name="PopupMapLine" FontSize="12">
+                                <Hyperlink Style="{StaticResource AccentLinkStyle}"
+                                           Click="OpenMap_Click"><Run FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE8A7;"/><Run Text=" In Google Maps öffnen"/></Hyperlink>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+            </Grid>
+
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <controls:SpeedGauge x:Name="Gauge" HorizontalAlignment="Center"/>
+
+                    <!-- Feste Höhe (eine Zeile), damit das Fenster trotz SizeToContent bei
+                         Statuswechseln nicht springt; lange Fehlertexte werden gekürzt und
+                         sind per Tooltip vollständig lesbar. Symbol und Text als Runs ohne
+                         Whitespace dazwischen; den Abstand hängt SetStatus an das Symbol an. -->
+                    <TextBlock x:Name="StatusText"
+                               Height="20"
+                               FontSize="14"
+                               Foreground="{DynamicResource MutedBrush}"
+                               TextAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="0,4,0,0"><Run x:Name="StatusIconRun" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/><Run x:Name="StatusMessageRun" Text="Bereit"/></TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardStyle}" Margin="0,16,0,0">
+                <Grid>
+                    <!-- Sichtbar erst nach einem abgeschlossenen Lauf; das negative Margin
+                         zieht den Button in die Padding-Ecke der Karte -->
+                    <Button x:Name="CopyResultButton"
+                            Style="{StaticResource AccentIconButtonStyle}"
+                            Content="&#xE8C8;"
+                            ToolTip="Ergebnis kopieren"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,-8,-8,0"
+                            Panel.ZIndex="1"
+                            Visibility="Collapsed"
+                            Click="CopyResult_Click"/>
+                    <UniformGrid Columns="4" Rows="1">
+                        <StackPanel x:Name="PingColumn">
+                            <TextBlock Text="Ping" Style="{StaticResource ResultLabelStyle}"/>
+                            <TextBlock x:Name="PingValueText" Text="–" Style="{StaticResource ResultValueStyle}"/>
+                            <TextBlock Text="ms" Style="{StaticResource ResultLabelStyle}"/>
+                        </StackPanel>
+                        <StackPanel x:Name="JitterColumn">
+                            <TextBlock Text="Jitter" Style="{StaticResource ResultLabelStyle}"/>
+                            <TextBlock x:Name="JitterValueText" Text="–" Style="{StaticResource ResultValueStyle}"/>
+                            <TextBlock Text="ms" Style="{StaticResource ResultLabelStyle}"/>
+                        </StackPanel>
+                        <StackPanel x:Name="DownloadColumn">
+                            <TextBlock Text="Download" Style="{StaticResource ResultLabelStyle}"/>
+                            <TextBlock x:Name="DownloadValueText" Text="–" Style="{StaticResource ResultValueStyle}"/>
+                            <TextBlock Text="Mbit/s" Style="{StaticResource ResultLabelStyle}"/>
+                        </StackPanel>
+                        <StackPanel x:Name="UploadColumn">
+                            <TextBlock Text="Upload" Style="{StaticResource ResultLabelStyle}"/>
+                            <TextBlock x:Name="UploadValueText" Text="–" Style="{StaticResource ResultValueStyle}"/>
+                            <TextBlock Text="Mbit/s" Style="{StaticResource ResultLabelStyle}"/>
+                        </StackPanel>
+                    </UniformGrid>
+                </Grid>
+            </Border>
+
+            <!-- Andock-Punkt für Erweiterungen; die Historie-Karte ist Collapsed,
+                 solange keine Einträge existieren, dann misst der Host 0 px -->
+            <ContentControl x:Name="ExtrasHost" Focusable="False">
+                <Border x:Name="HistoryCard" Style="{StaticResource CardStyle}"
+                        Margin="0,16,0,0" Visibility="Collapsed">
+                    <StackPanel Grid.IsSharedSizeScope="True">
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Letzte Messungen"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource MutedBrush}"
+                                       VerticalAlignment="Center"/>
+                            <Button x:Name="ClearHistoryButton"
+                                    Style="{StaticResource DangerIconButtonStyle}"
+                                    Content="&#xE74D;"
+                                    ToolTip="Historie löschen"
+                                    HorizontalAlignment="Right"
+                                    Click="ClearHistory_Click"/>
+                        </Grid>
+                        <ItemsControl x:Name="HistoryList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,3,0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="HistoryDownload"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="HistoryUpload"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="HistoryPing"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Time}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource MutedBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Download}"
+                                                   FontSize="13"
+                                                   Foreground="{DynamicResource TextBrush}"
+                                                   TextAlignment="Right" Margin="16,0,0,0"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Upload}"
+                                                   FontSize="13"
+                                                   Foreground="{DynamicResource TextBrush}"
+                                                   TextAlignment="Right" Margin="16,0,0,0"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding Ping}"
+                                                   FontSize="13"
+                                                   Foreground="{DynamicResource MutedBrush}"
+                                                   TextAlignment="Right" Margin="16,0,0,0"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Ersetzt die Liste während der 5-Sekunden-Undo-Frist -->
+                        <Grid x:Name="UndoPanel" Visibility="Collapsed" Margin="0,3,0,3">
+                            <TextBlock Text="Historie gelöscht"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource MutedBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Hyperlink Style="{StaticResource AccentLinkStyle}"
+                                           Click="UndoClear_Click">Rückgängig</Hyperlink>
+                            </TextBlock>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </ContentControl>
+
+            <Button x:Name="StartButton"
+                    Content="Start"
+                    Style="{StaticResource StartButtonStyle}"
+                    Click="StartButton_Click"
+                    Margin="0,16,0,0"/>
+        </StackPanel>
+    </Border>
+</Window>

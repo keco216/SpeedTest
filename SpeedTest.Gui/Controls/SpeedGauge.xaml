@@ -1,0 +1,69 @@
+<UserControl x:Class="SpeedTest.Gui.Controls.SpeedGauge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="320" Height="320">
+
+    <!-- 240°-Bogen von -120° bis +120° (0° = oben), Zentrum (160,160).
+         Punkt bei Winkel θ: (160 + r·sin θ, 160 − r·cos θ); ±120° bei r=130
+         ergibt die Bogenenden (47.417, 225) und (272.583, 225). -->
+    <Grid>
+        <Canvas x:Name="GaugeCanvas" Width="320" Height="320">
+            <Path Stroke="{DynamicResource TrackBrush}" StrokeThickness="10"
+                  StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                <Path.Data>
+                    <PathGeometry>
+                        <PathFigure StartPoint="47.417,225">
+                            <ArcSegment Point="272.583,225" Size="130,130"
+                                        IsLargeArc="True" SweepDirection="Clockwise"/>
+                        </PathFigure>
+                    </PathGeometry>
+                </Path.Data>
+            </Path>
+
+            <!-- Endpunkt, IsLargeArc und Sichtbarkeit setzt der NeedleAngle-Callback;
+                 am Ruheanschlag ausgeblendet, weil die runden Kappen sonst einen
+                 Punkt für das degenerierte Null-Längen-Segment zeichnen. -->
+            <Path x:Name="ProgressArcPath" Visibility="Collapsed"
+                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="10"
+                  StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                <Path.Data>
+                    <PathGeometry>
+                        <PathFigure StartPoint="47.417,225">
+                            <ArcSegment x:Name="ProgressArcSegment"
+                                        Point="47.417,225" Size="130,130"
+                                        IsLargeArc="False" SweepDirection="Clockwise"/>
+                        </PathFigure>
+                    </PathGeometry>
+                </Path.Data>
+            </Path>
+
+            <Line x:Name="Needle" Panel.ZIndex="10"
+                  X1="160" Y1="160" X2="160" Y2="55"
+                  Stroke="{DynamicResource TextBrush}" StrokeThickness="3"
+                  StrokeEndLineCap="Round">
+                <Line.RenderTransform>
+                    <RotateTransform x:Name="NeedleRotation"
+                                     CenterX="160" CenterY="160" Angle="-120"/>
+                </Line.RenderTransform>
+            </Line>
+            <Ellipse x:Name="HubEllipse" Panel.ZIndex="11" Width="20" Height="20"
+                     Canvas.Left="150" Canvas.Top="150"
+                     Fill="{DynamicResource TextBrush}"
+                     Stroke="{DynamicResource MutedBrush}" StrokeThickness="3"/>
+        </Canvas>
+
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14">
+            <TextBlock x:Name="LiveValueText"
+                       Text="0"
+                       FontSize="48" FontWeight="Bold"
+                       FontFamily="{StaticResource DisplayFontFamily}"
+                       Foreground="{DynamicResource AccentBrush}"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Mbit/s"
+                       FontSize="14"
+                       Foreground="{DynamicResource MutedBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,2,0,0"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
