@@ -1,0 +1,20 @@
+<Project Sdk="WixToolset.Sdk/7.0.0">
+
+  <PropertyGroup>
+    <!-- Einzige Versions-Quelle des Installers: steuert Package/@Version im wxs
+         und die Versionsnummer im MSI-Dateinamen -->
+    <ProductVersion>1.0.0</ProductVersion>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <!-- OSMF-EULA von WiX v7, vom Projektinhaber akzeptiert (Juli 2026): Wartungs-
+         gebühr gilt erst ab 10.000 US-$ Jahresumsatz mit WiX-gebauten Produkten. -->
+    <AcceptEula>wix7</AcceptEula>
+    <OutputName>SpeedTest-$(ProductVersion)-x64</OutputName>
+    <Cultures>de-DE</Cultures>
+    <DefineConstants>ProductVersion=$(ProductVersion);PublishDir=..\SpeedTest.Gui\bin\Release\net10.0-windows\win-x64\publish</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="7.0.0" />
+  </ItemGroup>
+
+</Project>

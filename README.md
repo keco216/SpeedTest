@@ -43,17 +43,18 @@ dotnet run --project SpeedTest.Gui
 dotnet run --project SpeedTest.Cli
 ```
 
-## Veröffentlichen (Publish)
+## Veröffentlichen (Publish & Installer)
+
+`publish.cmd` baut die eigenständige Single-File-EXE (bringt die .NET-Runtime mit)
+und daraus den MSI-Installer (WiX Toolset v7):
 
 ```powershell
-# Framework-abhängig (Zielrechner braucht die .NET-10-Runtime)
-dotnet publish SpeedTest.Gui -c Release
-
-# Eigenständig (bringt die Runtime mit, größere Ausgabe)
-dotnet publish SpeedTest.Gui -c Release -r win-x64 --self-contained
+.\publish.cmd
 ```
 
-Die Ausgabe liegt danach unter `SpeedTest.Gui\bin\Release\net10.0-windows\...\publish`.
+Ergebnis: `installer\bin\Release\SpeedTest-1.0.0-x64.msi` — installiert nach
+`C:\Program Files\Speedtest` samt Startmenü-Eintrag. Fertige Installer gibt es
+unter [Releases](https://github.com/keco216/SpeedTest/releases).
 
 ## Hinweis zur Messung
 

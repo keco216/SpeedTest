@@ -1,0 +1,53 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <!-- UpgradeCode: deterministisch per UUIDv5 aus dem String "SpeedTestGui.Installer"
+       abgeleitet. NIE mehr ändern — sonst erkennen sich künftige Versionen nicht
+       als Upgrade und installieren sich nebeneinander. -->
+  <Package Name="Speedtest"
+           Manufacturer="Kevin Colic"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="a301df43-468d-5d26-a319-ea649a5c9d8a"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="Eine neuere Version von Speedtest ist bereits installiert."/>
+    <MediaTemplate EmbedCab="yes"/>
+
+    <Icon Id="AppIcon" SourceFile="..\SpeedTest.Gui\icon.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="AppIcon"/>
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/keco216/SpeedTest"/>
+
+    <ui:WixUI Id="WixUI_Minimal"/>
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf"/>
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Speedtest"/>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppShortcutFolder" Name="Speedtest"/>
+    </StandardDirectory>
+
+    <Feature Id="Main">
+      <ComponentRef Id="MainExecutable"/>
+      <ComponentRef Id="StartMenuShortcut"/>
+    </Feature>
+
+    <Component Id="MainExecutable" Directory="INSTALLFOLDER" Bitness="always64">
+      <File Id="SpeedTestGuiExe" Source="$(var.PublishDir)\SpeedTest.Gui.exe" KeyPath="yes"/>
+    </Component>
+
+    <!-- Ein Shortcut darf kein KeyPath sein: Der HKCU-Registry-Wert dient als KeyPath,
+         RemoveFolder räumt den Startmenü-Ordner bei der Deinstallation ab. -->
+    <Component Id="StartMenuShortcut" Directory="AppShortcutFolder">
+      <Shortcut Id="AppShortcut"
+                Name="Speedtest"
+                Description="Internet-Speedtest"
+                Target="[INSTALLFOLDER]SpeedTest.Gui.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon"/>
+      <RemoveFolder Id="RemoveAppShortcutFolder" Directory="AppShortcutFolder" On="uninstall"/>
+      <RegistryValue Root="HKCU" Key="Software\Speedtest" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+    </Component>
+
+  </Package>
+</Wix>
