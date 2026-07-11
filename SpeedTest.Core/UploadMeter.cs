@@ -11,7 +11,8 @@ public class UploadMeter
     /// Lädt 10 Sekunden lang mit 3 parallelen Streams zum Testserver hoch; die ersten 2 Sekunden
     /// (Warm-up) fließen nicht ins Ergebnis ein. Neben der Geschwindigkeit wird die Zahl
     /// fehlgeschlagener Transfers geliefert (0-Werte wegen Serverfehlern erkennbar).
-    /// <paramref name="liveSpeed"/> erhält alle 200 ms die aktuelle Geschwindigkeit in Mbit/s.
+    /// <paramref name="liveSpeed"/> erhält alle 200 ms die aktuelle Geschwindigkeit in Mbit/s
+    /// (gleitender 1-s-Durchschnitt).
     /// </summary>
     public async Task<ThroughputResult> MeasureAsync(IProgress<double>? liveSpeed = null, CancellationToken ct = default)
     {

@@ -5,10 +5,15 @@ namespace SpeedTest.Core;
 /// <summary>
 /// Gemeinsame Ablaufsteuerung für Durchsatzmessungen (Download und Upload):
 /// feste Gesamtdauer mit Warm-up-Phase, threadsicherer Byte-Zähler, parallele
-/// Transfer-Schleifen und ein Reporter-Loop für die Live-Geschwindigkeit.
+/// Transfer-Schleifen und ein Reporter-Loop, der die Live-Geschwindigkeit als
+/// gleitenden Durchschnitt über <see cref="SmoothingWindow"/> meldet.
 /// </summary>
 internal sealed class ThroughputSession
 {
+    /// <summary>Breite des gleitenden Fensters, über das die Live-Geschwindigkeit
+    /// gemittelt wird; das Endergebnis bleibt davon unberührt.</summary>
+    private static readonly TimeSpan SmoothingWindow = TimeSpan.FromSeconds(1);
+
     private readonly TimeSpan _duration;
     private readonly TimeSpan _warmup;
     private readonly TimeSpan _reportInterval;
@@ -83,20 +88,27 @@ internal sealed class ThroughputSession
 
         async Task ReportLoopAsync()
         {
-            long lastBytes = 0;
-            var lastElapsed = TimeSpan.Zero;
+            // Gemeldet wird der Durchschnitt über ein gleitendes Fenster statt des rohen
+            // Momentanwerts des letzten Ticks: Einzel-Ticks schwanken durch TCP-Bursts
+            // und Request-Neustarts zweistellig, das Fenstermittel hält die Anzeige ruhig.
+            // Am Anfang wächst das Fenster erst an — die Rampe bleibt schnell sichtbar.
+            var windowTicks = Math.Max(1, (int)Math.Round(SmoothingWindow / _reportInterval));
+            var snapshots = new Queue<(TimeSpan Elapsed, long Bytes)>();
+            snapshots.Enqueue((TimeSpan.Zero, 0));
 
             while (await TryDelayAsync(_reportInterval, token))
             {
                 var elapsed = clock.Elapsed;
                 var bytes = Interlocked.Read(ref _bytes);
 
-                var interval = (elapsed - lastElapsed).TotalSeconds;
-                if (interval > 0)
-                    liveSpeed?.Report(ToMbitPerSecond(bytes - lastBytes, interval));
+                snapshots.Enqueue((elapsed, bytes));
+                if (snapshots.Count > windowTicks + 1)
+                    snapshots.Dequeue();
 
-                lastBytes = bytes;
-                lastElapsed = elapsed;
+                var (startElapsed, startBytes) = snapshots.Peek();
+                var window = (elapsed - startElapsed).TotalSeconds;
+                if (window > 0)
+                    liveSpeed?.Report(ToMbitPerSecond(bytes - startBytes, window));
             }
         }
     }

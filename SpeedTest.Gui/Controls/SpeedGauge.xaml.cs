@@ -1,15 +1,16 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 
 namespace SpeedTest.Gui.Controls;
 
 /// <summary>
-/// Tacho mit nichtlinearer 240°-Skala. <see cref="Value"/> (Mbit/s) fährt Nadel,
-/// Fortschrittsbogen und große Zahl mit einer 250-ms-EaseOut-Animation nach;
-/// <see cref="IsActive"/> schaltet den Akzent-Ring der Nabe.
+/// Tacho mit nichtlinearer 240°-Skala. <see cref="Value"/> (Mbit/s) ist der Zielwert;
+/// ein Render-Loop zieht den angezeigten Wert jeden Frame exponentiell nach und stellt
+/// daraus Nadel, Fortschrittsbogen und große Zahl. Die Nadel gleitet dadurch
+/// kontinuierlich dem Ziel hinterher, statt jedem neuen Messwert einzeln
+/// nachzuspringen. <see cref="IsActive"/> schaltet den Akzent-Ring der Nabe.
 /// </summary>
 public partial class SpeedGauge : UserControl
 {
@@ -22,9 +23,19 @@ public partial class SpeedGauge : UserControl
     private const double TickInnerRadius = 110;
     private const double LabelRadius = 93;
 
+    // Zeitkonstante des Nachziehens: pro 200 ms schrumpft der Restabstand zum Ziel
+    // auf 1/e. Klein genug, um der bereits über 1 s gemittelten Live-Kurve dicht zu
+    // folgen, groß genug, um deren Restzappeln zu verschleifen.
+    private const double ChaseTauSeconds = 0.2;
+
+    // Unterhalb dieses Abstands (Mbit/s) gilt das Ziel als erreicht — der Unterschied
+    // ist weder in der Zahl (eine Nachkommastelle) noch am Nadelwinkel erkennbar;
+    // der Render-Loop hält dann an.
+    private const double ChaseEpsilon = 0.05;
+
     private static readonly double[] ScaleMarks = [0, 5, 10, 25, 50, 100, 250, 500, 1000];
 
-    /// <summary>Zielwert in Mbit/s; das Control animiert Nadel und Zahl selbst dorthin.</summary>
+    /// <summary>Zielwert in Mbit/s; das Control zieht die Anzeige selbst dorthin nach.</summary>
     public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
         nameof(Value), typeof(double), typeof(SpeedGauge),
         new PropertyMetadata(0.0, OnValueChanged));
@@ -34,20 +45,20 @@ public partial class SpeedGauge : UserControl
         nameof(IsActive), typeof(bool), typeof(SpeedGauge),
         new PropertyMetadata(false, OnIsActiveChanged));
 
-    // Die eigentlich animierten Größen; ihre Callbacks stellen Nadel, Bogen und Zahl.
-    private static readonly DependencyProperty NeedleAngleProperty = DependencyProperty.Register(
-        "NeedleAngle", typeof(double), typeof(SpeedGauge),
-        new PropertyMetadata(MinAngle, OnNeedleAngleChanged));
-
-    private static readonly DependencyProperty DisplayedSpeedProperty = DependencyProperty.Register(
-        "DisplayedSpeed", typeof(double), typeof(SpeedGauge),
-        new PropertyMetadata(0.0, OnDisplayedSpeedChanged));
+    private double _displayedSpeed;
+    private bool _isChasing;
+    private TimeSpan _lastRenderingTime;
 
     public SpeedGauge()
     {
         InitializeComponent();
         LiveValueText.Text = FormatValue(0);
         BuildScale();
+
+        // Beim Entladen mitten in der Bewegung anhalten (das statische Rendering-Event
+        // hielte das Control sonst am Leben); beim (Wieder-)Laden direkt aufs Ziel.
+        Loaded += (_, _) => Snap(Value);
+        Unloaded += (_, _) => StopChase();
     }
 
     public double Value
@@ -100,30 +111,73 @@ public partial class SpeedGauge : UserControl
         // damit die Nadel beim Start nicht erst über die Skala fährt.
         if (!IsLoaded)
         {
-            BeginAnimation(NeedleAngleProperty, null);
-            BeginAnimation(DisplayedSpeedProperty, null);
-            SetValue(NeedleAngleProperty, SpeedToAngle(mbps));
-            SetValue(DisplayedSpeedProperty, mbps);
+            Snap(mbps);
             return;
         }
 
-        // Ersetzt eine laufende Animation (SnapshotAndReplace) und startet dadurch
-        // sanft vom aktuellen Zwischenwert; Zahl und Nadel laufen synchron.
-        BeginAnimation(NeedleAngleProperty, CreateEaseOut(SpeedToAngle(mbps)));
-        BeginAnimation(DisplayedSpeedProperty, CreateEaseOut(mbps));
+        StartChase();
     }
 
-    private static DoubleAnimation CreateEaseOut(double to) =>
-        new(to, TimeSpan.FromMilliseconds(250))
+    private void StartChase()
+    {
+        if (_isChasing)
+            return;
+
+        _isChasing = true;
+        _lastRenderingTime = TimeSpan.MinValue;
+        CompositionTarget.Rendering += OnRendering;
+    }
+
+    private void StopChase()
+    {
+        if (!_isChasing)
+            return;
+
+        _isChasing = false;
+        CompositionTarget.Rendering -= OnRendering;
+    }
+
+    private void OnRendering(object? sender, EventArgs e)
+    {
+        // Rendering kann mehrfach pro Frame feuern; nur echte neue Frames bewegen.
+        var renderingTime = ((RenderingEventArgs)e).RenderingTime;
+        if (_lastRenderingTime == TimeSpan.MinValue)
         {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
-        };
+            _lastRenderingTime = renderingTime;
+            return;
+        }
 
-    private static void OnNeedleAngleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        => ((SpeedGauge)d).ApplyNeedleAngle((double)e.NewValue);
+        var dt = (renderingTime - _lastRenderingTime).TotalSeconds;
+        if (dt <= 0)
+            return;
+        _lastRenderingTime = renderingTime;
 
-    private static void OnDisplayedSpeedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        => ((SpeedGauge)d).LiveValueText.Text = FormatValue((double)e.NewValue);
+        var target = Value;
+        if (Math.Abs(target - _displayedSpeed) <= ChaseEpsilon)
+        {
+            Snap(target);
+            return;
+        }
+
+        // Exponentielle Annäherung: framerate-unabhängig, überschwingt nie; nach einer
+        // Render-Pause (großes dt, z. B. minimiert) landet sie in einem Schritt am Ziel.
+        _displayedSpeed += (target - _displayedSpeed) * (1 - Math.Exp(-dt / ChaseTauSeconds));
+        ApplyDisplayedSpeed();
+    }
+
+    /// <summary>Stellt die Anzeige ohne Bewegung auf <paramref name="mbps"/> und hält den Loop an.</summary>
+    private void Snap(double mbps)
+    {
+        _displayedSpeed = mbps;
+        ApplyDisplayedSpeed();
+        StopChase();
+    }
+
+    private void ApplyDisplayedSpeed()
+    {
+        ApplyNeedleAngle(SpeedToAngle(_displayedSpeed));
+        LiveValueText.Text = FormatValue(_displayedSpeed);
+    }
 
     private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {

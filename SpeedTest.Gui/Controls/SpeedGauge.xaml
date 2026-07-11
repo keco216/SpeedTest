@@ -20,9 +20,9 @@
                 </Path.Data>
             </Path>
 
-            <!-- Endpunkt, IsLargeArc und Sichtbarkeit setzt der NeedleAngle-Callback;
-                 am Ruheanschlag ausgeblendet, weil die runden Kappen sonst einen
-                 Punkt für das degenerierte Null-Längen-Segment zeichnen. -->
+            <!-- Endpunkt, IsLargeArc und Sichtbarkeit setzt ApplyNeedleAngle im
+                 Code-Behind; am Ruheanschlag ausgeblendet, weil die runden Kappen
+                 sonst einen Punkt für das degenerierte Null-Längen-Segment zeichnen. -->
             <Path x:Name="ProgressArcPath" Visibility="Collapsed"
                   Stroke="{DynamicResource AccentBrush}" StrokeThickness="10"
                   StrokeStartLineCap="Round" StrokeEndLineCap="Round">
