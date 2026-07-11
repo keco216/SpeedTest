@@ -104,6 +104,18 @@
                 </Popup>
             </Grid>
 
+            <!-- Sichtbar nur, wenn der Start-Check ein neueres GitHub-Release gefunden
+                 hat; Klick lädt das MSI und startet die Installation (UAC-Abfrage),
+                 die App schließt sich dabei und startet nach dem Update neu. -->
+            <TextBlock x:Name="UpdateBanner"
+                       FontSize="12"
+                       HorizontalAlignment="Center"
+                       Margin="0,-6,0,10"
+                       Visibility="Collapsed">
+                <Hyperlink Style="{StaticResource AccentLinkStyle}"
+                           Click="UpdateBanner_Click"><Run FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE896;"/><Run x:Name="UpdateLinkText"/></Hyperlink>
+            </TextBlock>
+
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel>
                     <controls:SpeedGauge x:Name="Gauge" HorizontalAlignment="Center"/>

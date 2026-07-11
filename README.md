@@ -20,6 +20,8 @@ Konsolenversion. Die Messlogik steckt in einer wiederverwendbaren .NET-Bibliothe
   (OpenStreetMap) und Google-Maps-Link
 - **Ergebnis-Export** in die Zwischenablage
 - **Dark-/Light-Mode** zur Laufzeit umschaltbar, inklusive Titelleiste
+- **Auto-Update**: prüft beim Start auf ein neueres GitHub-Release und installiert
+  es auf Klick (MSI mit einmaliger UAC-Bestätigung, danach startet die App neu)
 - **Ehrliche Fehlanzeige**: Lehnt der Testserver Anfragen ab (Rate-Limit), zeigt die
   App „fehlgeschlagen" statt irreführender 0,0-Werte
 
@@ -52,9 +54,14 @@ und daraus den MSI-Installer (WiX Toolset v7):
 .\publish.cmd
 ```
 
-Ergebnis: `installer\bin\Release\SpeedTest-1.0.0-x64.msi` — installiert nach
+Ergebnis: `installer\bin\Release\SpeedTest-<Version>-x64.msi` — installiert nach
 `C:\Program Files\Speedtest` samt Startmenü-Eintrag. Fertige Installer gibt es
 unter [Releases](https://github.com/keco216/SpeedTest/releases).
+
+Für ein neues Release: Version in `SpeedTest.Gui\SpeedTest.Gui.csproj` **und**
+`installer\SpeedTest.Installer.wixproj` erhöhen, `publish.cmd` ausführen und das MSI
+als Asset eines GitHub-Releases mit Tag `vX.Y.Z` veröffentlichen — installierte Apps
+bieten es beim nächsten Start automatisch als Update an.
 
 ## Hinweis zur Messung
 

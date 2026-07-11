@@ -28,8 +28,12 @@ public partial class MainWindow : Window
 
     private readonly HistoryStore _historyStore = new();
     private readonly MiniMapService _miniMap = new();
+    private readonly UpdateService _updateService = new();
     private readonly CopyButtonFeedback _resultCopyFeedback;
     private readonly CopyButtonFeedback _ipCopyFeedback;
+
+    private UpdateInfo? _availableUpdate;
+    private bool _isInstallingUpdate;
 
     private bool _isRunning;
     private CancellationTokenSource? _cts;
@@ -50,7 +54,11 @@ public partial class MainWindow : Window
         _ipCopyFeedback = new CopyButtonFeedback(CopyIpButton);
 
         SourceInitialized += (_, _) => DarkTitleBar.Set(this, ThemeManager.IsDark);
-        Loaded += async (_, _) => await RefreshHistoryAsync();
+        Loaded += async (_, _) =>
+        {
+            await RefreshHistoryAsync();
+            await CheckForUpdateAsync();
+        };
         Closing += OnClosing;
 
         // Flyout rechtsbündig unter der Serverzeile ausrichten
@@ -67,6 +75,48 @@ public partial class MainWindow : Window
                 e.Handled = true;
             }
         };
+    }
+
+    /// <summary>Prüft im Hintergrund auf ein neueres GitHub-Release und blendet dann den
+    /// Update-Hinweis ein; jeder Fehler bleibt still, der Check darf die App nie stören.</summary>
+    private async Task CheckForUpdateAsync()
+    {
+        _availableUpdate = await _updateService.CheckAsync();
+        if (_availableUpdate is null)
+            return;
+
+        UpdateLinkText.Text = $" Update {_availableUpdate.Version} verfügbar – jetzt installieren";
+        UpdateBanner.Visibility = Visibility.Visible;
+        FadeSlideIn(UpdateBanner);
+    }
+
+    private async void UpdateBanner_Click(object sender, RoutedEventArgs e)
+    {
+        if (_availableUpdate is null || _isInstallingUpdate)
+            return;
+
+        // Eine laufende Messung abbrechen: Sie würde nur den Download ausbremsen,
+        // und die App schließt sich gleich ohnehin.
+        _isInstallingUpdate = true;
+        _cts?.Cancel();
+
+        try
+        {
+            var progress = new Progress<double>(p =>
+                UpdateLinkText.Text = $" Update wird heruntergeladen … {p:P0}");
+            var msiPath = await _updateService.DownloadAsync(_availableUpdate, progress);
+
+            UpdateLinkText.Text = " Installation startet – die App schließt sich …";
+            _updateService.BeginInstall(msiPath);
+            Application.Current.Shutdown();
+        }
+        catch (Exception)
+        {
+            // Download gescheitert (offline, Verbindung weg): zurück in den klickbaren
+            // Zustand — beim nächsten Versuch wird komplett neu geladen.
+            _isInstallingUpdate = false;
+            UpdateLinkText.Text = " Download fehlgeschlagen – erneut versuchen";
+        }
     }
 
     private void ThemeToggle_Click(object sender, RoutedEventArgs e)
