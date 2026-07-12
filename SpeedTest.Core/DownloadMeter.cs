@@ -9,6 +9,9 @@ public class DownloadMeter
     private const int StreamCount = 4;
     private const int BlockSize = 80 * 1024;
 
+    /// <summary>Feste Gesamtdauer der Messung; die GUI leitet daraus ihren Fortschrittsbalken ab.</summary>
+    public static readonly TimeSpan TestDuration = TimeSpan.FromSeconds(10);
+
     /// <summary>
     /// Lädt 10 Sekunden lang mit 4 parallelen Streams vom Testserver; die ersten 2 Sekunden
     /// (Warm-up) fließen nicht ins Ergebnis ein. Neben der Geschwindigkeit wird die Zahl
@@ -18,7 +21,7 @@ public class DownloadMeter
     /// </summary>
     public async Task<ThroughputResult> MeasureAsync(IProgress<double>? liveSpeed = null, CancellationToken ct = default)
     {
-        var session = new ThroughputSession();
+        var session = new ThroughputSession(TestDuration);
         return await session.RunAsync(
             StreamCount,
             token => DownloadOnceAsync(session, token),

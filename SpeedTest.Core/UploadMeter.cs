@@ -7,6 +7,9 @@ public class UploadMeter
     private const int StreamCount = 3;
     private const long BytesPerRequest = 25 * 1024 * 1024;
 
+    /// <summary>Feste Gesamtdauer der Messung; die GUI leitet daraus ihren Fortschrittsbalken ab.</summary>
+    public static readonly TimeSpan TestDuration = TimeSpan.FromSeconds(10);
+
     /// <summary>
     /// Lädt 10 Sekunden lang mit 3 parallelen Streams zum Testserver hoch; die ersten 2 Sekunden
     /// (Warm-up) fließen nicht ins Ergebnis ein. Neben der Geschwindigkeit wird die Zahl
@@ -16,7 +19,7 @@ public class UploadMeter
     /// </summary>
     public async Task<ThroughputResult> MeasureAsync(IProgress<double>? liveSpeed = null, CancellationToken ct = default)
     {
-        var session = new ThroughputSession();
+        var session = new ThroughputSession(TestDuration);
         return await session.RunAsync(
             StreamCount,
             token => UploadOnceAsync(session, token),

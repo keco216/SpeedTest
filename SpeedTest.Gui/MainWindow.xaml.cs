@@ -228,7 +228,7 @@ public partial class MainWindow : Window
             if (traceTask is not null)
                 ShowServerInfo(await traceTask);
 
-            SetStatus("↓", "Download läuft …");
+            StartPhase("Download", TransferDirection.Down, DownloadMeter.TestDuration);
             var download = await new DownloadMeter().MeasureAsync(liveSpeed, cts.Token);
             var downloadFailed = IsThroughputFailed(download);
             if (downloadFailed)
@@ -237,7 +237,7 @@ public partial class MainWindow : Window
                 ShowResult(DownloadColumn, DownloadValueText, SpeedGauge.FormatValue(download.Mbps));
             Gauge.Value = 0;
 
-            SetStatus("↑", "Upload läuft …");
+            StartPhase("Upload", TransferDirection.Up, UploadMeter.TestDuration);
             var upload = await new UploadMeter().MeasureAsync(liveSpeed, cts.Token);
             var uploadFailed = IsThroughputFailed(upload);
             if (uploadFailed)
@@ -295,6 +295,7 @@ public partial class MainWindow : Window
         {
             cts.Dispose();
             _cts = null;
+            StopPhaseIndicator();
             Gauge.Value = 0;
             Gauge.IsActive = false;
             _isRunning = false;
@@ -647,9 +648,60 @@ public partial class MainWindow : Window
             new DoubleAnimation(8, 0, TimeSpan.FromMilliseconds(300)) { EasingFunction = ease });
     }
 
+    private enum TransferDirection { Down = 1, Up = -1 }
+
+    /// <summary>
+    /// Zeigt die laufende Messphase: Der Akzent-Pfeil gleitet in Transferrichtung und
+    /// blendet dabei durch (Datenfluss-Effekt), darunter füllt sich der Fortschrittsbalken
+    /// linear über die feste Phasendauer. Beendet wird die Anzeige durch den nächsten
+    /// <see cref="SetStatus"/>-Aufruf oder das finally des Messlaufs.
+    /// </summary>
+    private void StartPhase(string label, TransferDirection direction, TimeSpan duration)
+    {
+        StatusText.Visibility = Visibility.Hidden;
+        PhaseLabel.Text = label;
+        PhaseArrow.Text = direction == TransferDirection.Down ? "\uE74B" : "\uE74A";
+        PhaseStatusPanel.Visibility = Visibility.Visible;
+
+        var travel = 5.0 * (int)direction;
+        PhaseArrowSlide.BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(-travel, travel, TimeSpan.FromMilliseconds(900))
+            {
+                RepeatBehavior = RepeatBehavior.Forever,
+            });
+
+        // Am Rand unsichtbar, in der Mitte voll sichtbar — der Pfeil "fließt" durch.
+        var fade = new DoubleAnimationUsingKeyFrames
+        {
+            Duration = TimeSpan.FromMilliseconds(900),
+            RepeatBehavior = RepeatBehavior.Forever,
+        };
+        fade.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromPercent(0)));
+        fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromPercent(0.35)));
+        fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromPercent(0.65)));
+        fade.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromPercent(1)));
+        PhaseArrow.BeginAnimation(OpacityProperty, fade);
+
+        PhaseProgressTrack.Visibility = Visibility.Visible;
+        PhaseProgressFill.BeginAnimation(WidthProperty,
+            new DoubleAnimation(0, PhaseProgressTrack.Width, duration));
+    }
+
+    /// <summary>Hält die Phasen-Animationen an und zeigt wieder die normale Statuszeile.</summary>
+    private void StopPhaseIndicator()
+    {
+        PhaseArrowSlide.BeginAnimation(TranslateTransform.YProperty, null);
+        PhaseArrow.BeginAnimation(OpacityProperty, null);
+        PhaseProgressFill.BeginAnimation(WidthProperty, null);
+        PhaseStatusPanel.Visibility = Visibility.Collapsed;
+        PhaseProgressTrack.Visibility = Visibility.Hidden;
+        StatusText.Visibility = Visibility.Visible;
+    }
+
     /// <summary>Wechselt die Statuszeile weich: 120 ms aus, Symbol+Text tauschen, 120 ms ein.</summary>
     private void SetStatus(string icon, string message)
     {
+        StopPhaseIndicator();
         var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(120));
         fadeOut.Completed += (_, _) =>
         {
