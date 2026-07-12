@@ -53,6 +53,11 @@ public partial class MainWindow : Window
         _resultCopyFeedback = new CopyButtonFeedback(CopyResultButton);
         _ipCopyFeedback = new CopyButtonFeedback(CopyIpButton);
 
+        // Nie höher als der Arbeitsbereich: Auf kleinen oder skalierten Bildschirmen
+        // scrollt dann der Inhalt (ScrollViewer), statt unter der Taskleiste zu enden.
+        MaxHeight = SystemParameters.WorkArea.Height;
+        SizeChanged += OnSizeChanged;
+
         SourceInitialized += (_, _) => DarkTitleBar.Set(this, ThemeManager.IsDark);
         Loaded += async (_, _) =>
         {
@@ -117,6 +122,29 @@ public partial class MainWindow : Window
             _isInstallingUpdate = false;
             UpdateLinkText.Text = " Download fehlgeschlagen – erneut versuchen";
         }
+    }
+
+    /// <summary>
+    /// SizeToContent lässt das Fenster nach unten wachsen, wenn Serverzeile, Update-Hinweis
+    /// oder Historie erscheinen — aus der Bildschirmmitte heraus irgendwann bis unter die
+    /// Taskleiste. Schiebt das Fenster bei jeder Höhenänderung so weit nach oben, dass die
+    /// Unterkante im Arbeitsbereich bleibt (bezogen auf den Primärmonitor, auf dem das
+    /// Fenster auch startet).
+    /// </summary>
+    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!e.HeightChanged)
+            return;
+
+        // Erst nach dem Layout- und Platzierungslauf klemmen: Während des
+        // SizeToContent-Wachstums sind Top und ActualHeight hier noch Zwischenwerte,
+        // und ein sofort gesetztes Top verliert gegen die eigene Fensterplatzierung.
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            var workArea = SystemParameters.WorkArea;
+            if (Top + ActualHeight > workArea.Bottom)
+                Top = Math.Max(workArea.Top, workArea.Bottom - ActualHeight);
+        });
     }
 
     private void ThemeToggle_Click(object sender, RoutedEventArgs e)

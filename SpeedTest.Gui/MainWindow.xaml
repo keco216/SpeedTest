@@ -8,7 +8,15 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="{StaticResource TextFontFamily}">
 
-    <Border Background="{DynamicResource BackgroundBrush}" Padding="24">
+    <!-- Der ScrollViewer ist der Fallback für kleine oder stark skalierte Bildschirme:
+         Deckelt die MaxHeight des Fensters (Arbeitsbereich) den Inhalt, wird er
+         scrollbar, statt unter der Taskleiste zu verschwinden; sonst bleibt der
+         Balken durch "Auto" unsichtbar. -->
+    <Border Background="{DynamicResource BackgroundBrush}">
+        <ScrollViewer Padding="24"
+                      Focusable="False"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
         <StackPanel>
             <!-- Kopfzeile: links der Theme-Umschalter (Glyphe und Tooltip kommen aus
                  dem aktiven Theme), rechts der klickbare Standort des Messservers -->
@@ -245,5 +253,6 @@
                     Click="StartButton_Click"
                     Margin="0,16,0,0"/>
         </StackPanel>
+        </ScrollViewer>
     </Border>
 </Window>
