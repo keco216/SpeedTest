@@ -112,17 +112,53 @@
                 </Popup>
             </Grid>
 
-            <!-- Sichtbar nur, wenn der Start-Check ein neueres GitHub-Release gefunden
-                 hat; Klick lädt das MSI und startet die Installation (UAC-Abfrage),
-                 die App schließt sich dabei und startet nach dem Update neu. -->
-            <TextBlock x:Name="UpdateBanner"
-                       FontSize="12"
-                       HorizontalAlignment="Center"
-                       Margin="0,-6,0,10"
-                       Visibility="Collapsed">
-                <Hyperlink Style="{StaticResource AccentLinkStyle}"
-                           Click="UpdateBanner_Click"><Run FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE896;"/><Run x:Name="UpdateLinkText"/></Hyperlink>
-            </TextBlock>
+            <!-- Update-Hinweis im InfoBar-Stil: sichtbar nur, wenn der Start-Check ein
+                 neueres GitHub-Release gefunden hat. "Installieren" lädt das MSI und
+                 startet die Installation (UAC-Abfrage); die App schließt sich dabei und
+                 startet aktualisiert neu. Das X blendet den Hinweis für die Sitzung aus. -->
+            <Border x:Name="UpdateBanner"
+                    Background="{DynamicResource UpdateBannerBrush}"
+                    BorderBrush="{DynamicResource UpdateBannerBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,8"
+                    Margin="0,-4,0,12"
+                    Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE896;"
+                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                               FontSize="14"
+                               Foreground="{DynamicResource AccentBrush}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="UpdateBannerText"
+                               Grid.Column="1"
+                               FontSize="12.5"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center"
+                               Margin="10,0"/>
+                    <Button x:Name="UpdateInstallButton"
+                            Grid.Column="2"
+                            Content="Installieren"
+                            Style="{StaticResource CompactAccentButtonStyle}"
+                            Click="UpdateInstall_Click"/>
+                    <Button x:Name="UpdateDismissButton"
+                            Grid.Column="3"
+                            Style="{StaticResource AccentIconButtonStyle}"
+                            Content="&#xE711;"
+                            FontSize="11"
+                            ToolTip="Später"
+                            Margin="6,0,0,0"
+                            Click="UpdateDismiss_Click"/>
+                </Grid>
+            </Border>
 
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel>

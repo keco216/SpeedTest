@@ -3,7 +3,7 @@
   <PropertyGroup>
     <!-- Einzige Versions-Quelle des Installers: steuert Package/@Version im wxs
          und die Versionsnummer im MSI-Dateinamen -->
-    <ProductVersion>1.1.1</ProductVersion>
+    <ProductVersion>1.1.2</ProductVersion>
     <InstallerPlatform>x64</InstallerPlatform>
     <!-- OSMF-EULA von WiX v7, vom Projektinhaber akzeptiert (Juli 2026): Wartungs-
          gebühr gilt erst ab 10.000 US-$ Jahresumsatz mit WiX-gebauten Produkten. -->

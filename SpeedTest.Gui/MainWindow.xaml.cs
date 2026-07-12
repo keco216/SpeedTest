@@ -90,12 +90,12 @@ public partial class MainWindow : Window
         if (_availableUpdate is null)
             return;
 
-        UpdateLinkText.Text = $" Update {_availableUpdate.Version} verfügbar – jetzt installieren";
+        UpdateBannerText.Text = $"Update {_availableUpdate.Version} verfügbar";
         UpdateBanner.Visibility = Visibility.Visible;
         FadeSlideIn(UpdateBanner);
     }
 
-    private async void UpdateBanner_Click(object sender, RoutedEventArgs e)
+    private async void UpdateInstall_Click(object sender, RoutedEventArgs e)
     {
         if (_availableUpdate is null || _isInstallingUpdate)
             return;
@@ -104,14 +104,16 @@ public partial class MainWindow : Window
         // und die App schließt sich gleich ohnehin.
         _isInstallingUpdate = true;
         _cts?.Cancel();
+        UpdateInstallButton.Visibility = Visibility.Collapsed;
+        UpdateDismissButton.Visibility = Visibility.Collapsed;
 
         try
         {
             var progress = new Progress<double>(p =>
-                UpdateLinkText.Text = $" Update wird heruntergeladen … {p:P0}");
+                UpdateBannerText.Text = $"Update wird heruntergeladen … {p:P0}");
             var msiPath = await _updateService.DownloadAsync(_availableUpdate, progress);
 
-            UpdateLinkText.Text = " Installation startet – die App schließt sich …";
+            UpdateBannerText.Text = "Installation startet – die App schließt sich …";
             _updateService.BeginInstall(msiPath);
             Application.Current.Shutdown();
         }
@@ -120,9 +122,17 @@ public partial class MainWindow : Window
             // Download gescheitert (offline, Verbindung weg): zurück in den klickbaren
             // Zustand — beim nächsten Versuch wird komplett neu geladen.
             _isInstallingUpdate = false;
-            UpdateLinkText.Text = " Download fehlgeschlagen – erneut versuchen";
+            UpdateBannerText.Text = "Download fehlgeschlagen";
+            UpdateInstallButton.Content = "Erneut versuchen";
+            UpdateInstallButton.Visibility = Visibility.Visible;
+            UpdateDismissButton.Visibility = Visibility.Visible;
         }
     }
+
+    /// <summary>Blendet den Update-Hinweis für diese Sitzung aus; der nächste
+    /// App-Start prüft ohnehin erneut.</summary>
+    private void UpdateDismiss_Click(object sender, RoutedEventArgs e)
+        => UpdateBanner.Visibility = Visibility.Collapsed;
 
     /// <summary>
     /// SizeToContent lässt das Fenster nach unten wachsen, wenn Serverzeile, Update-Hinweis

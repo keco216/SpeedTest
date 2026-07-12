@@ -21,6 +21,9 @@
     <SolidColorBrush x:Key="SecondaryPressedBrush" Color="#12161E"/>
     <SolidColorBrush x:Key="DangerBrush" Color="#F87171"/>
     <SolidColorBrush x:Key="DisabledBrush" Color="#232A38"/>
+    <!-- Update-Banner: Akzent mit 13 % bzw. 33 % Opacity als Fläche und Rand -->
+    <SolidColorBrush x:Key="UpdateBannerBrush" Color="#2222D3EE"/>
+    <SolidColorBrush x:Key="UpdateBannerBorderBrush" Color="#5522D3EE"/>
 
     <!-- Der Umschalter zeigt das Ziel-Theme: im Dunkeln die Sonne -->
     <sys:String x:Key="ThemeToggleGlyph">&#xE706;</sys:String>

@@ -145,6 +145,7 @@
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="ButtonChrome"
                             Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
                             CornerRadius="4">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
@@ -166,6 +167,13 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- Kompakter Akzent-Button für Inline-Aktionen (Update-Banner) -->
+    <Style x:Key="CompactAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource StartButtonStyle}">
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Padding" Value="14,0"/>
     </Style>
 
     <!-- Sekundär-Button (Abbrechen): Kartenfläche mit Akzent-Rand -->

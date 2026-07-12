@@ -20,6 +20,9 @@
     <SolidColorBrush x:Key="SecondaryPressedBrush" Color="#E2E7ED"/>
     <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
     <SolidColorBrush x:Key="DisabledBrush" Color="#CBD5E1"/>
+    <!-- Update-Banner: Akzent mit 8 % bzw. 30 % Opacity als Fläche und Rand -->
+    <SolidColorBrush x:Key="UpdateBannerBrush" Color="#140891B2"/>
+    <SolidColorBrush x:Key="UpdateBannerBorderBrush" Color="#4D0891B2"/>
 
     <!-- Der Umschalter zeigt das Ziel-Theme: im Hellen den Mond -->
     <sys:String x:Key="ThemeToggleGlyph">&#xE708;</sys:String>
